@@ -1,0 +1,9 @@
+{
+    "num": 22,
+    "ptrn": 101001,
+    "name": "Adornment",
+    "symb": "䷕",
+    "desc": "You can influence the situation only in small ways. Use tact and charm.",
+    "descPersonal" : "Each of us projects and image of how we would like to be seen by others.",
+    "furtherAspects": [[9,"Use your own resources."],[6,"Dont judge appearences."]]
+}
