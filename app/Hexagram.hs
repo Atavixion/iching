@@ -1,17 +1,27 @@
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE OverloadedStrings #-}
+
 module Hexagram where
 
+import Data.Aeson
+import qualified Data.ByteString.Lazy as B
+import System.Exit
 import Data.List
 import Data.Maybe
+import GHC.Generics
 import Numeric
 
-fst' :: (a,b,c) -> a
-fst' (x,_,_) = x
+fst' :: (a, b, c) -> a
+fst' (x, _, _) = x
 
-snd' :: (a,b,c) -> b
-snd' (_,x,_) = x
+snd' :: (a, b, c) -> b
+snd' (_, x, _) = x
 
-trd' :: (a,b,c) -> c
-trd' (_,_,x) = x
+trd' :: (a, b, c) -> c
+trd' (_, _, x) = x
+
+xor :: Char -> Char -> Char
+xor a b = if a /= b then '1' else '0'
 
 type Sequence = [Int]
 
@@ -25,19 +35,42 @@ mawSeq = [63, 56, 60, 59, 58, 61, 57, 62, 36, 39, 32, 35, 34, 37, 33, 38, 18, 23
 
 -- Gets hexagrams number from binary (--- = 1, - - = 0) reading bottom to top
 -- eg. yaoToHexagram 101001 wenSeq == 22
-yaoToHexagram :: Int -> Sequence -> Int
-yaoToHexagram b seq = fromJust (elemIndex (fst . head . readBin . reverse . show $ b) seq) + 1
+yaoToHexagram :: Sequence -> String -> Int
+yaoToHexagram seq b = fromJust (elemIndex (fst . head . readBin . reverse $ b) seq) + 1
 
--- Gets hexagrams using line value (--- = 7, - - = 8, -⦵- = 9, -X- = 6)
--- (furtherAspects,current,future)
--- eg. valToHexagram 789776 wenSeq == ({00}1001,49,25)
-valToHexagram :: Int -> Sequence -> (Int,Int,Int)
-valToHexagram v seq = (read f, yaoToHexagram (read p) seq, yaoToHexagram (read n) seq )
-    where
-        toBin x = case x of
-                    '7' -> '1'
-                    '8' -> '0'
-        p = map (\x -> if x == '9' then '1' else if x == '6' then '0' else toBin x ) (show v)
-        n = map (\x -> if x == '9' then '0' else if x == '6' then '1' else toBin x ) (show v)
-        f = map (\x -> if x == '9' || x == '6' then '1' else '0') (show v)
-        
+valToLine :: Char -> (Char,Char)
+valToLine x =
+  case x of
+    '6' -> ('0','1')
+    '7' -> ('1','0')
+    '8' -> ('0','0')
+    '9' -> ('1','1')
+
+valToHexagram :: Sequence -> Int -> (Int,Int)
+valToHexagram seq v = (p,n)
+  where
+    p = yaoToHexagram seq $ map (fst . valToLine) (show v)
+    n = yaoToHexagram seq $ map (uncurry xor . valToLine) (show v)
+
+
+data Hexagram = Hexagram
+  { num :: Int,
+    ptrn :: Int,
+    name :: String,
+    symb :: String,
+    desc :: String,
+    descPersonal :: String,
+    furtherAspects :: [(Int, String)]
+  }
+  deriving (Show, Generic)
+
+instance FromJSON Hexagram
+
+instance ToJSON Hexagram
+
+readJson :: Int -> IO Hexagram
+readJson x = do
+  d <- (eitherDecode <$> B.readFile ("data/" ++ show x ++ ".json")) :: IO (Either String Hexagram)
+  case d of
+    Left err -> die "Hexagram not found"
+    Right ps -> return ps
