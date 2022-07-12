@@ -39,7 +39,8 @@ The *Hexagrams.json* file contains all the hexagrams and their descriptions from
         "name": { // self explanitory
             "chinese": "乾",
             "pinyin": "qián",
-            "english": "The Creative Force"
+            "english": "Force",
+            "book": "The Creative Force", // book title
         },
         "symbol": "䷀", // UTF-8 symbol
         "quote": "I must Create a System...", // quote from the book
